@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Asegúrate de importar Firestore
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,6 +17,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final conPwd = TextEditingController();
   final conPwdConfirm = TextEditingController();
   bool isLoading = false;
+
+  Future<void> registerUser() async {
+    String name = conName.text;
+    String email = conEmail.text;
+    String password = conPwd.text;
+
+    if (password != conPwdConfirm.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Las contraseñas no coinciden")),
+      );
+      return;
+    }
+
+    // Encriptar la contraseña
+    String encryptedPassword = encryptPassword(password);
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // Registrar el usuario en Firebase Auth
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password, // Almacenar la contraseña en texto plano, Firebase la encriptará
+      );
+
+      // Obtener el ID del usuario registrado
+      String userId = userCredential.user?.uid ?? '';
+
+      // Guardar el nombre y la contraseña encriptada en Firestore
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
+        'name': name,
+        'email': email,
+        'password': encryptedPassword, // Guarda la contraseña encriptada
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Usuario registrado con éxito")),
+      );
+
+      // Volver al login después de registrarse
+      Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${e.message}")),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  String encryptPassword(String password) {
+    // Encriptación de la contraseña usando SHA-256
+    final bytes = utf8.encode(password);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,19 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderRadius: BorderRadius.circular(10),
         ),
       ),
-      onPressed: () {
-        if (conPwd.text != conPwdConfirm.text) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Las contraseñas no coinciden")),
-          );
-          return;
-        }
-        setState(() => isLoading = true);
-        Future.delayed(const Duration(milliseconds: 3000), () {
-          setState(() => isLoading = false);
-          Navigator.pop(context); // Volver al login después de registrarse
-        });
-      },
+      onPressed: isLoading ? null : registerUser, // Llama a la función de registro
       child: isLoading
           ? const CircularProgressIndicator(color: Colors.white)
           : Text('Registrarse', style: TextStyle(fontSize: screenWidth * 0.05)),
