@@ -23,7 +23,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String email = conEmail.text;
     String password = conPwd.text;
 
-    if (password != conPwdConfirm.text) {
+    if(name.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Por favor, ingresa tu nombre.')),
+      );
+      return; 
+    }else if(email.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Por favor, ingresa tu correo electronico.')),
+      );
+      return; 
+    }else if(password.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Por favor, ingresa tu contraseña.')),
+      );
+      return; 
+    }else{
+      if (password != conPwdConfirm.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Las contraseñas no coinciden")),
       );
@@ -52,6 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'name': name,
         'email': email,
         'password': encryptedPassword, // Guarda la contraseña encriptada
+        'imgProfile': null,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,6 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() {
         isLoading = false;
       });
+    }
     }
   }
 
