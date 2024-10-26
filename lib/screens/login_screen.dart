@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: conUser,
       decoration: InputDecoration(
         labelText: 'Correo electrónico',
-        prefixIcon: Icon(Icons.person, color: Colors.orange),
+        prefixIcon: const Icon(Icons.person, color: Colors.orange),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: conPwd,
       decoration: InputDecoration(
         labelText: 'Contraseña',
-        prefixIcon: Icon(Icons.lock, color: Colors.orange),
+        prefixIcon: const Icon(Icons.lock, color: Colors.orange),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => isLoading = true);
         Future.delayed(const Duration(milliseconds: 3000), () {
           setState(() => isLoading = false);
-          Navigator.pushNamed(context, "/onboarding");
+          Navigator.pushNamed(context, "/home");
         });
       },
       child: isLoading
@@ -119,10 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
+              /*Image.asset(
                 'assets/logo.png',
                 width: screenWidth * 0.4,
-              ),
+              ),*/
               SizedBox(height: screenHeight * 0.05),
               ctnCredentials,
               SizedBox(height: screenHeight * 0.05),

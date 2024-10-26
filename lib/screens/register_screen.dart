@@ -24,7 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: conName,
       decoration: InputDecoration(
         labelText: 'Nombre',
-        prefixIcon: Icon(Icons.person, color: Colors.orange),
+        prefixIcon: const Icon(Icons.person, color: Colors.orange),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -35,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: conEmail,
       decoration: InputDecoration(
         labelText: 'Correo electrónico',
-        prefixIcon: Icon(Icons.email, color: Colors.orange),
+        prefixIcon: const Icon(Icons.email, color: Colors.orange),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -46,7 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: conPwd,
       decoration: InputDecoration(
         labelText: 'Contraseña',
-        prefixIcon: Icon(Icons.lock, color: Colors.orange),
+        prefixIcon: const Icon(Icons.lock, color: Colors.orange),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -57,7 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: conPwdConfirm,
       decoration: InputDecoration(
         labelText: 'Confirmar contraseña',
-        prefixIcon: Icon(Icons.lock, color: Colors.orange),
+        prefixIcon: const Icon(Icons.lock, color: Colors.orange),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
