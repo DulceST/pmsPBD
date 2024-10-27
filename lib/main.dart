@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:pmspbd/screens/home_screen.dart';
 import 'package:pmspbd/screens/login_screen.dart';
+import 'package:pmspbd/screens/profile_screen.dart';
 import 'package:pmspbd/screens/register_screen.dart';
 
 void main() async{
@@ -26,7 +27,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => HomeScreen(), 
+        '/home': (context) => const HomeScreen(), 
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }
