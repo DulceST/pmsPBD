@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Asegúrate de importar Firestore
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:pmspbd/firebase/database_users.dart';
+
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,72 +24,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String email = conEmail.text;
     String password = conPwd.text;
 
-    if(name.isEmpty){
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor, ingresa tu nombre.')),
+        const SnackBar(content: Text('Por favor, ingresa tu nombre.')),
       );
       return; 
-    }else if(email.isEmpty){
+    } else if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor, ingresa tu correo electronico.')),
+        const SnackBar(content: Text('Por favor, ingresa tu correo electronico.')),
       );
       return; 
-    }else if(password.isEmpty){
+    } else if (password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor, ingresa tu contraseña.')),
+        const SnackBar(content: Text('Por favor, ingresa tu contraseña.')),
       );
       return; 
-    }else{
+    } else {
       if (password != conPwdConfirm.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Las contraseñas no coinciden")),
-      );
-      return;
-    }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Las contraseñas no coinciden")),
+        );
+        return;
+      }
 
-    // Encriptar la contraseña
-    String encryptedPassword = encryptPassword(password);
+      // Encriptar la contraseña
+      String encryptedPassword = encryptPassword(password);
 
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      // Registrar el usuario en Firebase Auth
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password, // Almacenar la contraseña en texto plano, Firebase la encriptará
-      );
-
-      // Obtener el ID del usuario registrado
-      String userId = userCredential.user?.uid ?? '';
-
-      // Guardar el nombre y la contraseña encriptada en Firestore
-      await FirebaseFirestore.instance.collection('users').doc(userId).set({
-        'name': name,
-        'email': email,
-        'password': encryptedPassword, // Guarda la contraseña encriptada
-        'imgProfile': null,
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Usuario registrado con éxito")),
-      );
-
-      // Volver al login después de registrarse
-      Navigator.pop(context);
-    } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: ${e.message}")),
-      );
-    } finally {
       setState(() {
-        isLoading = false;
+        isLoading = true;
       });
-    }
+
+      try {
+        // Crear un objeto de usuario
+        Map<String, dynamic> user = {
+          'name': name,
+          'email': email,
+          'password': encryptedPassword, // Guarda la contraseña encriptada
+          'imgProfile': 'assets/default_avatar.jpg',
+        };
+
+        // Llamar al método insertUser para almacenar el usuario en Firestore
+        await DatabaseUsers().insertUser(user);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Usuario registrado con éxito")),
+        );
+
+        // Volver al login después de registrarse
+        Navigator.pop(context);
+      } on FirebaseAuthException catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${e.message}")),
+        );
+      } finally {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
