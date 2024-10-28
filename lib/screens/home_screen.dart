@@ -23,6 +23,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _events = {};
+    //_selectedDay = DateTime.now();
+    _loadAllEvents();
   }
 
   // Obtiene los datos de usuario para usar en el drawer
@@ -53,83 +55,102 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // Carga todos los eventos para mostrarlos en el calendario
+  Future<void> _loadAllEvents() async {
+    var snapshot = await FirebaseFirestore.instance.collection('sales').get();
+    setState(() {
+      _events.clear();
+      for (var doc in snapshot.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        DateTime eventDate = (data['date'] as Timestamp).toDate().toLocal();
+        if (!_events.containsKey(eventDate)) {
+          _events[eventDate] = [];
+        }
+        _events[eventDate]!.add(data);
+      }
+    });
+  }
 
 //funcion que convierte la fecha para que se pueda mostrar
   String _formatDate(dynamic dateValue) {
-  if (dateValue == null) return 'N/A';
+    if (dateValue == null) return 'N/A';
 
-  DateTime dateTime;
-  if (dateValue is Timestamp) {
-    dateTime = dateValue.toDate(); // Convierte Timestamp a DateTime
-  } else if (dateValue is DateTime) {
-    dateTime = dateValue;
-  } else {
-    return 'Fecha no válida';
+    DateTime dateTime;
+    if (dateValue is Timestamp) {
+      dateTime = dateValue.toDate(); // Convierte Timestamp a DateTime
+    } else if (dateValue is DateTime) {
+      dateTime = dateValue;
+    } else {
+      return 'Fecha no válida';
+    }
+    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime); // Formato deseado
   }
 
-  return DateFormat('dd/MM/yyyy HH:mm').format(dateTime); // Formato deseado
-}
-
-void _showDetailsDialog(BuildContext context, Map<String, dynamic> saleData) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Detalles de la Venta'),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: [
-              Text('Cliente: ${saleData['client']}'),
-              Text('Fecha: ${_formatDate(saleData['date'])}'),
-              Text('Estado: ${saleData['status']}'),
-              Text('Piezas: ${saleData['amout']}'),
-              Text('Precio unitario: \$${saleData['unit_price']}'),
-              Text('Total: \$${saleData['subtotal']}'),
-              // Agrega más información según sea necesario
-            ],
+  void _showDetailsDialog(BuildContext context, Map<String, dynamic> saleData) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Detalles de la Venta'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: [
+                Text('Cliente: ${saleData['client']}'),
+                Text('Fecha: ${_formatDate(saleData['date'])}'),
+                Text('Estado: ${saleData['status']}'),
+                Text('Piezas: ${saleData['amout']}'),
+                Text('Precio unitario: \$${saleData['unit_price']}'),
+                Text('Total: \$${saleData['subtotal']}'),
+                // Agrega más información según sea necesario
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Cerrar el diálogo
-            },
-            child: const Text('Cerrar'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cerrar el diálogo
+              },
+              child: const Text('Cerrar'),
+            ),
+            TextButton(
+              onPressed: () {
+                //accion para finalizar 
+              },
+              child: const Text('Finalizar venta'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
 //Muestra en el calendario la venta correspondiente en el calendario
-void _loadEventsForSelectedDay(DateTime date) {
-    FirebaseFirestore.instance.collection('sales').get().then((snapshot) {
-      setState(() {
-        _events.clear(); // Limpiar eventos previos
-        for (var doc in snapshot.docs) {
-          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-          DateTime eventDate = (data['date'] as Timestamp).toDate().toLocal();
-          // Solo agregar eventos si coinciden con la fecha seleccionada
-          if (eventDate.year == date.year &&
-              eventDate.month == date.month &&
-              eventDate.day == date.day) {
-            if (!_events.containsKey(date)) {
-              _events[date] = [];
-            }
-            _events[date]!.add(data);
+  Future<void> _loadEventsForSelectedDay(DateTime date) async {
+    var snapshot = await FirebaseFirestore.instance.collection('sales').get();
+    setState(() {
+      _events.clear(); // Limpiar eventos previos
+      for (var doc in snapshot.docs) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        DateTime eventDate = (data['date'] as Timestamp).toDate().toLocal();
+
+        // Solo agregar eventos si coinciden con la fecha seleccionada
+        if (eventDate.year == date.year &&
+            eventDate.month == date.month &&
+            eventDate.day == date.day) {
+          if (!_events.containsKey(date)) {
+            _events[date] = [];
           }
+          _events[date]!.add(data);
         }
-      });
+      }
     });
   }
 
-  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+  Future<void> _onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
     setState(() {
       _selectedDay = selectedDay;
     });
-    _loadEventsForSelectedDay(selectedDay); 
+    await _loadEventsForSelectedDay(selectedDay);
     _showEventDetails(context, selectedDay);
   }
 
@@ -161,22 +182,12 @@ void _loadEventsForSelectedDay(DateTime date) {
               ],
               if (events.isEmpty) const Text('No hay eventos para este día.'),
               const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {
-                  // Aquí puedes agregar la lógica para finalizar la venta/servicio
-                  Navigator.pop(context); // Cerrar modal
-                },
-                child: const Text('Finalizar Venta/Servicio'),
-              ),
             ],
           ),
         );
       },
     );
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -214,9 +225,12 @@ void _loadEventsForSelectedDay(DateTime date) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     } else if (snapshot.hasError) {
-                      return const Center(child: Text("Error al cargar las ventas"));
-                    } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return const Center(child: Text("No hay ventas pendientes"));
+                      return const Center(
+                          child: Text("Error al cargar las ventas"));
+                    } else if (!snapshot.hasData ||
+                        snapshot.data!.docs.isEmpty) {
+                      return const Center(
+                          child: Text("No hay ventas pendientes"));
                     } else {
                       final salesDocs = snapshot.data!.docs;
                       return ListView.builder(
@@ -258,6 +272,8 @@ void _loadEventsForSelectedDay(DateTime date) {
                   lastDay: DateTime.utc(2030, 12, 31),
                   focusedDay: _selectedDay,
                   onDaySelected: _onDaySelected,
+
+                  // Carga de eventos para cada día
                   eventLoader: (day) {
                     return _events[day] ?? [];
                   },
@@ -277,28 +293,61 @@ void _loadEventsForSelectedDay(DateTime date) {
                         ),
                       );
                     },
-                    defaultBuilder: (context, day, focusedDay) {
-                      List<Map<String, dynamic>> events = _events[day] ?? [];
-                      Color statusColor = Colors.transparent;
+
+                    // Marcadores de eventos en el calendario
+                    markerBuilder: (context, day, events) {
+                      List<Map<String, dynamic>> dayEvents = _events[day] ?? [];
+                      List<Widget> markers = [];
 
                       // Determina el color según el estado de los eventos
-                      if (events.isNotEmpty) {
-                        if (events.any((event) => event['status'] == 'por cumplir')) {
-                          statusColor = Colors.white;
-                        } else if (events.any((event) => event['status'] == 'cancelado')) {
-                          statusColor = Colors.red;
+                      Color dotColor = Colors.transparent;
+                      if (dayEvents.isNotEmpty) {
+                        if (dayEvents
+                            .any((event) => event['status'] == 'por cumplir')) {
+                          dotColor = Colors.white; // Blanco para "por cumplir"
+                        } else if (dayEvents
+                            .any((event) => event['status'] == 'cancelado')) {
+                          dotColor = Colors.red; // Rojo para "cancelado"
                         } else {
-                          statusColor = Colors.green;
+                          dotColor = Colors
+                              .green; // Verde para "otro estado" (asumiendo finalizado)
                         }
                       }
 
-                      return Container(
-                        margin: const EdgeInsets.all(4.0),
-                        decoration: BoxDecoration(
-                          color: statusColor,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Center(child: Text(day.day.toString())),
+                      // Agregar un marcador solo si hay eventos
+                      if (dotColor != Colors.transparent) {
+                        markers.add(
+                          Container(
+                            margin: const EdgeInsets.only(
+                                top: 4.0), // Espacio arriba del círculo
+                            width: 8.0, // Ancho del círculo
+                            height: 8.0, // Altura del círculo
+                            decoration: BoxDecoration(
+                              color: dotColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.black,
+                                  width: 1.0), // Forma circular
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Stack(
+                        children: [
+                          Center(
+                              child:
+                                  Text(day.day.toString())), // Número del día
+                          Positioned(
+                            bottom: 4, // Ubicación del marcador
+                            left: 0,
+                            right: 0,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: markers,
+                            ),
+                          ),
+                        ],
                       );
                     },
                   ),
@@ -307,7 +356,7 @@ void _loadEventsForSelectedDay(DateTime date) {
             ],
           ),
           const HistoryScreen(),
-          const ProductScreen(),
+           ProductScreen(),
         ],
       ),
 

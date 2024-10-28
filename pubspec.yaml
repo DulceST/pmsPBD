@@ -46,6 +46,7 @@ dependencies:
   image_picker: ^1.1.2
   badges: ^3.1.2
   intl: ^0.19.0
+  flutter_expandable_fab: ^2.3.0
 
 dev_dependencies:
   flutter_test:
