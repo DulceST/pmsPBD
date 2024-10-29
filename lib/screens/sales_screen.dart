@@ -19,20 +19,20 @@ class SalesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Ventas Pendientes'),
+        title: const Text('Ventas Pendientes'),
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: databaseSales
             .getSalesByStatus('por cumplir'), // Obtener ventas por cumplir
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
+            return const Center(
                 child:
                     CircularProgressIndicator()); // Mostrar indicador de carga
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
+            return const Center(
                 child: Text(
                     'No hay ventas pendientes.')); // Mensaje si no hay datos
           }
@@ -52,7 +52,7 @@ class SalesScreen extends StatelessWidget {
             }).toList()),
             builder: (context, futureSnapshot) {
               if (futureSnapshot.connectionState == ConnectionState.waiting) {
-                return Center(
+                return const Center(
                     child:
                         CircularProgressIndicator()); // Mostrar indicador de carga
               }
@@ -62,7 +62,7 @@ class SalesScreen extends StatelessWidget {
                   children: futureSnapshot.data!,
                 );
               } else {
-                return Center(
+                return const Center(
                     child: Text(
                         'No hay productos disponibles.')); // Mensaje en caso de que no haya datos
               }
