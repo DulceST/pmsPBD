@@ -55,8 +55,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       return ListTile(
                         title: Text(title),
-                        subtitle: Text('Estatus: $status\nFecha: $formattedEventDate'),
-                        trailing: _getStatusColor(status),
+                        subtitle: Text(
+                            'Estatus: $status\nFecha: $formattedEventDate'),
+                        trailing: Container(
+                          width: 12, // Ancho del círculo
+                          height: 12, // Alto del círculo
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(
+                                status), // Color según el estado
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: Colors.black, width: 1.0), // Borde negro
+                          ),
+                        ),
                       );
                     }).toList(),
             ),
@@ -92,30 +103,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 // Obtener color según el estado de la venta
-  Widget _getStatusColor(String status) {
-    Color color;
+  Color _getStatusColor(String? status) {
     switch (status) {
       case 'por cumplir':
-        color = Colors.green;
-        break;
+        return Colors.green;
       case 'cancelado':
-        color = Colors.red;
-        break;
+        return Colors.red;
       case 'completado':
-        color = Colors.white;
-        break;
+        return Colors.white;
       default:
-        color = Colors.black; // Color por defecto si no hay coincidencia
+        return Colors.black; // Color por defecto si no hay coincidencia
     }
-    return Container(
-      width: 12,
-      height: 12,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-         border: Border.all(color: Colors.black, width: 1.0), 
-      ),
-    );
   }
 
   @override
@@ -176,17 +174,40 @@ class _HomeScreenState extends State<HomeScreen> {
             .map((doc) => doc.data() as Map<String, dynamic>)
             .toList();
 
+        // Contar eventos por día e imprimir en consola
+        _countEventsPerDay(salesData);
+
         return TableCalendar(
           focusedDay: _selectedDay,
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
           eventLoader: (day) {
             // Filtrar eventos asegurándose de que el campo `date` existe y no es `null`
-            return salesData
-                .where((sale) =>
-                    sale['date'] != null &&
-                    (sale['date'] as Timestamp).toDate().isAtSameMomentAs(day))
-                .toList();
+            final eventsForDay = salesData.where((sale) {
+              if (sale['date'] != null) {
+                final saleDate = (sale['date'] as Timestamp).toDate();
+                return saleDate.year == day.year &&
+                    saleDate.month == day.month &&
+                    saleDate.day == day.day;
+              }
+              return false;
+            }).toList();
+
+            // Devuelve una lista con la cantidad de eventos como puntos
+            return List.generate(eventsForDay.length, (index) {
+              return Container(
+                margin: const EdgeInsets.only(
+                    top: 2), // Margen superior para espacio
+                width: 8, // Ancho de la bolita
+                height: 8, // Alto de la bolita
+                decoration: BoxDecoration(
+                  color: _getStatusColor(
+                      eventsForDay[index]['status']), // Color según el estado
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black, width: 1.0),
+                ),
+              );
+            });
           },
           onDaySelected: (selectedDay, focusedDay) {
             setState(() {
@@ -198,5 +219,31 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+  }
+
+//metodo que cuenta los eventos por dia
+  void _countEventsPerDay(List<Map<String, dynamic>> salesData) {
+    Map<DateTime, int> eventsCountMap = {};
+
+    // Contar los eventos por fecha
+    for (var sale in salesData) {
+      if (sale['date'] != null) {
+        DateTime date = (sale['date'] as Timestamp).toDate();
+        DateTime key = DateTime(date.year, date.month, date.day);
+
+        // Incrementar el contador para la fecha
+        if (eventsCountMap.containsKey(key)) {
+          eventsCountMap[key] = eventsCountMap[key]! + 1;
+        } else {
+          eventsCountMap[key] = 1;
+        }
+      }
+    }
+
+    // Imprimir el conteo de eventos por día en la consola
+    eventsCountMap.forEach((date, count) {
+      print(
+          'Fecha: ${DateFormat('d MMMM yyyy').format(date)}, Eventos: $count');
+    });
   }
 }
