@@ -32,58 +32,103 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Mostrar modal con los eventos del día seleccionado
   void _showEventsForDay(DateTime day) async {
-    // Obtener los eventos del día seleccionado
-    final events = await _getEventsForDay(day);
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(
-              'Eventos para ${DateFormat('EEEE, d MMMM yyyy').format(day)}'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: events.isEmpty
-                  ? [const Text('No hay eventos para este día')]
-                  : events.map((event) {
-                      final title =
-                          event['client'] ?? 'Sin cliente'; // Manejo de nulos
-                      final status =
-                          event['status'] ?? 'desconocido'; // Manejo de nulos
-                      final eventDate = (event['date'] as Timestamp).toDate();
-                      final formattedEventDate =
-                          DateFormat('d MMMM yyyy').format(eventDate);
+  // Obtener los eventos del día seleccionado
+  final events = await _getEventsForDay(day);
 
-                      return ListTile(
-                        title: Text(title),
-                        subtitle: Text(
-                            'Estatus: $status\nFecha: $formattedEventDate'),
-                        trailing: Container(
-                          width: 12, // Ancho del círculo
-                          height: 12, // Alto del círculo
-                          decoration: BoxDecoration(
-                            color: _getStatusColor(
-                                status), // Color según el estado
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: Colors.black, width: 1.0), // Borde negro
-                          ),
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        child: Container(
+          height: MediaQuery.of(context).size.height, // Altura del modal
+          width: MediaQuery.of(context).size.width, // Ancho del modal
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                color: Theme.of(context).primaryColor, // Color de fondo del título
+                child: Text(
+                  'Eventos para ${DateFormat('EEEE, d MMMM yyyy').format(day)}',
+                  style: const TextStyle(color: Colors.white, fontSize: 20),
+                ),
+              ),
+              Expanded(
+  child: SingleChildScrollView(
+    child: ListBody(
+      children: events.isEmpty
+          ? [const Text('No hay eventos para este día')]
+          : events.map((event) {
+              final title = event['client'] ?? 'Sin cliente'; // Manejo de nulos
+              final status = event['status'] ?? 'desconocido'; // Manejo de nulos
+              final amout = event['amout'] ?? '0';
+              final subtotal = event['subtotal'] ?? '0';
+              final unitprice = event['unit_price'] ?? '0';
+              final productId = event['product_id']; 
+
+              // Retornar un FutureBuilder para obtener detalles del producto
+              return FutureBuilder<DocumentSnapshot>(
+                future: _firestore.collection('Products').doc(productId).get(),
+                builder: (context, productSnapshot) {
+                  if (productSnapshot.connectionState == ConnectionState.waiting) {
+                    return const ListTile(
+                      title: Text('Cargando producto...'),
+                    );
+                  }
+                  if (!productSnapshot.hasData || !productSnapshot.data!.exists) {
+                    return ListTile(
+                      title: Text(title),
+                      subtitle: const Text('Producto no encontrado.'),
+                      trailing: Container(
+                        width: 12, // Ancho del círculo
+                        height: 12, // Alto del círculo
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(status), // Color según el estado
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 1.0), // Borde negro
                         ),
-                      );
-                    }).toList(),
-            ),
+                      ),
+                    );
+                  }
+
+                  // Obtener el nombre del producto
+                  final productData = productSnapshot.data!.data() as Map<String, dynamic>;
+                  final productName = productData['product'] ?? 'Sin producto';
+
+                  return ListTile(
+                    title: Text(title),
+                    subtitle: Text(
+                      'Producto: $productName\nCantidad: $amout\nSubtotal: $subtotal\nPiezas por unidad: $unitprice',
+                    ),
+                    trailing: Container(
+                      width: 12, // Ancho del círculo
+                      height: 12, // Alto del círculo
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(status), // Color según el estado
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.black, width: 1.0), // Borde negro
+                      ),
+                    ),
+                  );
+                },
+              );
+            }).toList(),
+                  ),
+                ),
+              ),
+              TextButton(
+                child: const Text('Cerrar'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
           ),
-          actions: [
-            TextButton(
-              child: const Text('Cerrar'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
+
 
   // Obtener eventos para un día específico
   Future<List<Map<String, dynamic>>> _getEventsForDay(DateTime day) async {
