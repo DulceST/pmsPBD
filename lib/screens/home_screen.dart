@@ -65,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final unitprice = event['unit_price'] ?? '0';
               final productId = event['product_id']; 
 
+
               // Retornar un FutureBuilder para obtener detalles del producto
               return FutureBuilder<DocumentSnapshot>(
                 future: _firestore.collection('Products').doc(productId).get(),
@@ -97,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return ListTile(
                     title: Text(title),
                     subtitle: Text(
-                      'Producto: $productName\nCantidad: $amout\nSubtotal: $subtotal\nPiezas por unidad: $unitprice',
+                      'Producto: $productName\nCantidad: $amout\nSubtotal: $subtotal\nPiezas por unidad: $unitprice\nEstado: $status',
                     ),
                     trailing: Container(
                       width: 12, // Ancho del círculo

@@ -138,6 +138,9 @@ class _ProductScreenState extends State<ProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+    title: const Text('Productos'),
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: widget.databaseProducts.getProducts(),
         builder: (context, snapshot) {

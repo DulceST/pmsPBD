@@ -18,9 +18,6 @@ class SalesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ventas Pendientes'),
-      ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: databaseSales
             .getSalesByStatus('por cumplir'), // Obtener ventas por cumplir
