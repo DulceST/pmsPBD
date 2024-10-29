@@ -29,5 +29,14 @@ class DatabaseProducts {
     return collectionReference!.snapshots();
   }
 
+  // Método para obtener el nombre del producto a partir de su ID
+  Future<String?> getProductName(String productId) async {
+    DocumentSnapshot doc = await collectionReference!.doc(productId).get();
+    if (doc.exists) {
+      return doc['product']; 
+    }
+    return null; 
+  }
+
   
 }

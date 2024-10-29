@@ -1,15 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DatabaseUsers {
   FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
   CollectionReference? collectionReference;
 
-  // Constructor que inicializa la referencia de la colección
   DatabaseUsers() {
     collectionReference = firebaseFirestore.collection('users');
   }
 
-  // Método para insertar un nuevo usuario en la colección
   Future<void> insertUser(Map<String, dynamic> user) async {
     return collectionReference!.doc().set(user);
   }
@@ -24,5 +23,14 @@ class DatabaseUsers {
     return collectionReference!.doc(userId).update(user);
   }
 
-  
+  // Método para obtener los datos del usuario autenticado
+  Future<Map<String, dynamic>?> getUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot userDoc = await collectionReference!.doc(user.uid).get();
+      return userDoc.data() as Map<String, dynamic>?; // Devuelve los datos del usuario
+    }
+    return null; // Devuelve null si no hay usuario
+  }
+
 }

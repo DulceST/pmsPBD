@@ -6,6 +6,7 @@ import 'package:pmspbd/screens/login_screen.dart';
 import 'package:pmspbd/screens/product_screen.dart';
 import 'package:pmspbd/screens/profile_screen.dart';
 import 'package:pmspbd/screens/register_screen.dart';
+import 'package:pmspbd/screens/sales_screen.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/products': (context) =>  ProductScreen(),
         '/history': (context) => const HistoryScreen(),
+        '/sales': (context) =>  SalesScreen()
       },
     );
   }

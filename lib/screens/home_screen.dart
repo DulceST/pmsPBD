@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pmspbd/screens/history_screen.dart';
 import 'package:pmspbd/screens/product_screen.dart';
-import 'package:intl/intl.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:pmspbd/screens/sales_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,347 +13,47 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  DateTime _selectedDay = DateTime.now();
-  late Map<DateTime, List<Map<String, dynamic>>> _events;
+      
 
   @override
   void initState() {
     super.initState();
-    _events = {};
-    //_selectedDay = DateTime.now();
-    _loadAllEvents();
   }
 
-  // Obtiene los datos de usuario para usar en el drawer
-  Future<Map<String, dynamic>?> _getUserData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      return userDoc.data() as Map<String, dynamic>?;
-    }
-    return null;
-  }
-
-  // Consulta para mostrar las ventas con un estado pendiente
-  Stream<QuerySnapshot> _getSales() {
-    return FirebaseFirestore.instance
-        .collection('sales')
-        .where('status',
-            isEqualTo: 'por cumplir') // Filtra las ventas pendientes
-        .snapshots();
-  }
-
+  //Manejar la navegacion de la barra
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  // Carga todos los eventos para mostrarlos en el calendario
-  Future<void> _loadAllEvents() async {
-    var snapshot = await FirebaseFirestore.instance.collection('sales').get();
-    setState(() {
-      _events.clear();
-      for (var doc in snapshot.docs) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        DateTime eventDate = (data['date'] as Timestamp).toDate().toLocal();
-        if (!_events.containsKey(eventDate)) {
-          _events[eventDate] = [];
-        }
-        _events[eventDate]!.add(data);
-      }
-    });
-  }
-
-//funcion que convierte la fecha para que se pueda mostrar
-  String _formatDate(dynamic dateValue) {
-    if (dateValue == null) return 'N/A';
-
-    DateTime dateTime;
-    if (dateValue is Timestamp) {
-      dateTime = dateValue.toDate(); // Convierte Timestamp a DateTime
-    } else if (dateValue is DateTime) {
-      dateTime = dateValue;
-    } else {
-      return 'Fecha no válida';
-    }
-    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime); // Formato deseado
-  }
-
-  void _showDetailsDialog(BuildContext context, Map<String, dynamic> saleData) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Detalles de la Venta'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: [
-                Text('Cliente: ${saleData['client']}'),
-                Text('Fecha: ${_formatDate(saleData['date'])}'),
-                Text('Estado: ${saleData['status']}'),
-                Text('Piezas: ${saleData['amout']}'),
-                Text('Precio unitario: \$${saleData['unit_price']}'),
-                Text('Total: \$${saleData['subtotal']}'),
-                // Agrega más información según sea necesario
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Cerrar el diálogo
-              },
-              child: const Text('Cerrar'),
-            ),
-            TextButton(
-              onPressed: () {
-                //accion para finalizar 
-              },
-              child: const Text('Finalizar venta'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-//Muestra en el calendario la venta correspondiente en el calendario
-  Future<void> _loadEventsForSelectedDay(DateTime date) async {
-    var snapshot = await FirebaseFirestore.instance.collection('sales').get();
-    setState(() {
-      _events.clear(); // Limpiar eventos previos
-      for (var doc in snapshot.docs) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        DateTime eventDate = (data['date'] as Timestamp).toDate().toLocal();
-
-        // Solo agregar eventos si coinciden con la fecha seleccionada
-        if (eventDate.year == date.year &&
-            eventDate.month == date.month &&
-            eventDate.day == date.day) {
-          if (!_events.containsKey(date)) {
-            _events[date] = [];
-          }
-          _events[date]!.add(data);
-        }
-      }
-    });
-  }
-
-  Future<void> _onDaySelected(DateTime selectedDay, DateTime focusedDay) async {
-    setState(() {
-      _selectedDay = selectedDay;
-    });
-    await _loadEventsForSelectedDay(selectedDay);
-    _showEventDetails(context, selectedDay);
-  }
-
-  //muestra el modal con los eventos del dia que se selecciono
-  void _showEventDetails(BuildContext context, DateTime day) {
-    // Mostrar modal con eventos del día
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        List<Map<String, dynamic>> events = _events[day] ?? [];
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                DateFormat('EEEE, d MMMM').format(day),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 10),
-              for (var event in events) ...[
-                ListTile(
-                  title: Text('Cliente: ${event['client']}'),
-                  subtitle: Text('Estado: ${event['status']}'),
-                  onTap: () => _showDetailsDialog(context, event),
-                ),
-              ],
-              if (events.isEmpty) const Text('No hay eventos para este día.'),
-              const SizedBox(height: 10),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bazar de Ropa'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
+            onPressed: () {
+              // Navegar a la pantalla del carrito de compras
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) =>  SalesScreen()),
+              );
+            },
+          ),
+        ],
       ),
-      drawer: FutureBuilder<Map<String, dynamic>?>(
-        // Usuario Drawer
-        future: _getUserData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(
-                child: Text("Error al cargar datos del usuario"));
-          } else {
-            final userData = snapshot.data!;
-            return _myDrawer(context, userData);
-          }
-        },
-      ),
-
-      // Contenido principal de la pantalla con IndexedStack
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          Column(
-            children: [
-              // Sección de Ventas por Cumplir
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: _getSales(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return const Center(
-                          child: Text("Error al cargar las ventas"));
-                    } else if (!snapshot.hasData ||
-                        snapshot.data!.docs.isEmpty) {
-                      return const Center(
-                          child: Text("No hay ventas pendientes"));
-                    } else {
-                      final salesDocs = snapshot.data!.docs;
-                      return ListView.builder(
-                        itemCount: salesDocs.length,
-                        itemBuilder: (context, index) {
-                          final saleData =
-                              salesDocs[index].data() as Map<String, dynamic>;
-                          return Container(
-                            margin: const EdgeInsets.symmetric(
-                                vertical: 8.0, horizontal: 16.0),
-                            padding: const EdgeInsets.all(12.0),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade100,
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            child: ListTile(
-                              title: Text('Cliente : ${saleData['client']}'),
-                              subtitle: Text(
-                                'Fecha: ${_formatDate(saleData['date'])}',
-                              ),
-                              trailing: Text(saleData['status']),
-                              onTap: () {
-                                _showDetailsDialog(context, saleData);
-                              },
-                            ),
-                          );
-                        },
-                      );
-                    }
-                  },
-                ),
-              ),
-
-              // Sección del Calendario
-              SizedBox(
-                height: 400, // Ajusta la altura según sea necesario
-                child: TableCalendar<Map<String, dynamic>>(
-                  firstDay: DateTime.utc(2020, 1, 1),
-                  lastDay: DateTime.utc(2030, 12, 31),
-                  focusedDay: _selectedDay,
-                  onDaySelected: _onDaySelected,
-
-                  // Carga de eventos para cada día
-                  eventLoader: (day) {
-                    return _events[day] ?? [];
-                  },
-                  calendarBuilders: CalendarBuilders(
-                    todayBuilder: (context, day, focusedDay) {
-                      return Container(
-                        margin: const EdgeInsets.all(4.0),
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Center(
-                          child: Text(
-                            day.day.toString(),
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      );
-                    },
-
-                    // Marcadores de eventos en el calendario
-                    markerBuilder: (context, day, events) {
-                      List<Map<String, dynamic>> dayEvents = _events[day] ?? [];
-                      List<Widget> markers = [];
-
-                      // Determina el color según el estado de los eventos
-                      Color dotColor = Colors.transparent;
-                      if (dayEvents.isNotEmpty) {
-                        if (dayEvents
-                            .any((event) => event['status'] == 'por cumplir')) {
-                          dotColor = Colors.white; // Blanco para "por cumplir"
-                        } else if (dayEvents
-                            .any((event) => event['status'] == 'cancelado')) {
-                          dotColor = Colors.red; // Rojo para "cancelado"
-                        } else {
-                          dotColor = Colors
-                              .green; // Verde para "otro estado" (asumiendo finalizado)
-                        }
-                      }
-
-                      // Agregar un marcador solo si hay eventos
-                      if (dotColor != Colors.transparent) {
-                        markers.add(
-                          Container(
-                            margin: const EdgeInsets.only(
-                                top: 4.0), // Espacio arriba del círculo
-                            width: 8.0, // Ancho del círculo
-                            height: 8.0, // Altura del círculo
-                            decoration: BoxDecoration(
-                              color: dotColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: Colors.black,
-                                  width: 1.0), // Forma circular
-                            ),
-                          ),
-                        );
-                      }
-
-                      return Stack(
-                        children: [
-                          Center(
-                              child:
-                                  Text(day.day.toString())), // Número del día
-                          Positioned(
-                            bottom: 4, // Ubicación del marcador
-                            left: 0,
-                            right: 0,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: markers,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
+          const Column(
+            
           ),
           const HistoryScreen(),
-           ProductScreen(),
+          ProductScreen(),
         ],
       ),
 
@@ -375,36 +72,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _myDrawer(BuildContext context, Map<String, dynamic> userData) {
-    return Drawer(
-      child: Column(
-        children: [
-          UserAccountsDrawerHeader(
-            currentAccountPicture: CircleAvatar(
-              child: CachedNetworkImage(
-                imageUrl: userData['imgProfile'] ?? 'assets/default_avatar.jpg',
-                placeholder: (context, url) =>
-                    const CircularProgressIndicator(),
-                errorWidget: (context, url, error) => const CircleAvatar(
-                  backgroundImage:
-                      NetworkImage('https://via.placeholder.com/150'),
-                ),
-                imageBuilder: (context, imageProvider) => CircleAvatar(
-                  backgroundImage: imageProvider,
-                ),
-              ),
-            ),
-            accountName: Text(userData['name'] ?? 'Nombre no disponible'),
-            accountEmail: Text(userData['email'] ?? 'Correo no disponible'),
-          ),
-          ListTile(
-            onTap: () => Navigator.pushNamed(context, '/profile'),
-            title: const Text('Perfil'),
-            leading: const Icon(Icons.person),
-            trailing: const Icon(Icons.chevron_right),
-          ),
-        ],
-      ),
-    );
-  }
 }
