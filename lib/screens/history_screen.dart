@@ -20,7 +20,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       case 'por cumplir':
         return const Color.fromARGB(255, 245, 148, 37).withOpacity(0.95); 
       case 'cancelado':
-        return Colors.red.withOpacity(0.2);
+        return Colors.red.withOpacity(0.85);
       case 'completado':
         return const Color.fromARGB(255, 103, 255, 43);
       default:

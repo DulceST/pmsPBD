@@ -2,6 +2,7 @@
 
 class DatabaseSales {
   FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
+   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   CollectionReference? collectionReference;
 
   DatabaseSales() {
@@ -35,13 +36,18 @@ class DatabaseSales {
   }
 
   Stream<List<Map<String, dynamic>>> getSalesByStatus(String status) {
-    return collectionReference!
+    return _firestore
+        .collection('sales')
         .where('status', isEqualTo: status)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .toList());
+        .map((snapshot) => snapshot.docs.map((doc) {
+              return {
+                'id': doc.id,  // Incluye el ID del documento
+                ...doc.data() as Map<String, dynamic>
+              };
+            }).toList());
   }
+
 }
 
 

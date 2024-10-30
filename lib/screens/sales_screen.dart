@@ -41,7 +41,16 @@ class SalesScreen extends StatelessWidget {
                   return ListTile(
                     title: Text('Producto: ${productSnapshot.data ?? "Desconocido"}'),
                     subtitle: Text('Cliente: ${sale['client'] ?? "Desconocido"}'),
-                    trailing: Text('\$${sale['subtotal'] ?? 0}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('\$${sale['subtotal'] ?? 0}'),
+                        IconButton(
+                          icon: const Icon(Icons.cancel, color: Colors.red),
+                          onPressed: () => _cancelSale(sale['id']), // Pasar el ID del documento
+                        ),
+                      ],
+                    ),
                   );
                 },
               );
@@ -50,6 +59,14 @@ class SalesScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+    Future<void> _cancelSale(String saleId) async {
+    try {
+      await databaseSales.updateSaleStatus(saleId, 'cancelado');
+    } catch (e) {
+      print('Error al cancelar la venta: $e');
+    }
   }
 
   Future<void> _registerSale(BuildContext context) async {
