@@ -5,6 +5,7 @@ import 'package:pmspbd/screens/history_screen.dart';
 import 'package:pmspbd/screens/product_screen.dart';
 import 'package:pmspbd/screens/sales_screen.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:badges/badges.dart' as badges;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,10 +18,34 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   DateTime _selectedDay = DateTime.now();
+  int _pendingSalesCount = 0; // Contador de ventas "por cumplir"
 
   @override
   void initState() {
     super.initState();
+    _fetchPendingSalesCount(); // Cargar la cantidad de ventas por cumplir al iniciar
+  }
+
+    // Método para contar ventas "por cumplir"
+  Future<void> _fetchPendingSalesCount() async {
+    final snapshot = await _firestore
+        .collection('sales')
+        .where('status', isEqualTo: 'por cumplir')
+        .get();
+
+    setState(() {
+      _pendingSalesCount = snapshot.docs.length; // Actualiza el contador
+    });
+  }
+
+
+  // Escucha en tiempo real las ventas "por cumplir"
+  Stream<int> _pendingSalesStream() {
+    return _firestore
+        .collection('sales')
+        .where('status', isEqualTo: 'por cumplir')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
   }
 
   //Manejar la navegacion de la barra
@@ -34,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showEventsForDay(DateTime day) async {
   // Obtener los eventos del día seleccionado
   final events = await _getEventsForDay(day);
+  int _pendingSalesCount = 0; // Contador de ventas "por cumplir"
 
   showDialog(
     context: context,
@@ -168,13 +194,29 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Bazar de Ropa'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_bag),
-            onPressed: () {
-              // Navegar a la pantalla del carrito de compras
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProductScreen()),
+          // Escuchar el stream y mostrar el badge dinámicamente
+          StreamBuilder<int>(
+            stream: _pendingSalesStream(),
+            builder: (context, snapshot) {
+              final count = snapshot.data ?? 0; // Fallback a 0 si no hay datos
+
+              return badges.Badge(
+                badgeContent: Text(
+                  '$count', // Muestra la cantidad de ventas por cumplir
+                  style: const TextStyle(color: Colors.white),
+                ),
+                position: badges.BadgePosition.topEnd(top: 0, end: 3),
+                child: IconButton(
+                  icon: const Icon(Icons.shopping_bag),
+                  onPressed: () {
+                    // Navegar a la pantalla del carrito de compras
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ProductScreen()),
+                    );
+                  },
+                ),
               );
             },
           ),
@@ -188,8 +230,6 @@ class _HomeScreenState extends State<HomeScreen> {
           SalesScreen(),
         ],
       ),
-
-      // Barra de navegación inferior
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
