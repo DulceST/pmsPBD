@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pmspbd/firebase/database_sales.dart';
+import 'package:pmspbd/firebase/database_products.dart';
+import 'package:intl/intl.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -11,6 +13,24 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final DatabaseSales databaseSales = DatabaseSales();
+  final DatabaseProducts databaseProducts = DatabaseProducts();
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'por cumplir':
+        return const Color.fromARGB(255, 245, 148, 37).withOpacity(0.95); 
+      case 'cancelado':
+        return Colors.red.withOpacity(0.2);
+      case 'completado':
+        return const Color.fromARGB(255, 103, 255, 43);
+      default:
+        return Colors.grey.withOpacity(0.2);
+    }
+  }
+
+  Future<String?> _getProductName(String productId) async {
+    return productId.isNotEmpty ? await databaseProducts.getProductName(productId) : 'Desconocido';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,25 +56,37 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 String formattedDate = '';
                 if (data['date'] is Timestamp) {
                   Timestamp timestamp = data['date'];
-                  formattedDate = '${timestamp.toDate().day}/${timestamp.toDate().month}/${timestamp.toDate().year}';
+                  final DateFormat formatter = DateFormat('dd/MM/yyyy');
+                  formattedDate = formatter.format(timestamp.toDate());
                 } else {
                   formattedDate = data['date'] ?? 'Fecha no disponible';
                 }
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: ListTile(
-                    title: Text(data['product'] ?? 'Producto desconocido'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Cantidad: ${data['amout'] ?? 0}'),
-                        Text('Estado: ${data['status'] ?? 'Desconocido'}'),
-                        Text('Fecha: $formattedDate'), // Mostrar la fecha
-                      ],
-                    ),
-                    trailing: Text('\$${data['subtotal'] ?? 0}'),
-                  ),
+                // Obtener el color del estado
+                String status = data['status'] ?? 'Desconocido';
+                Color statusColor = _getStatusColor(status);
+
+                // Obtener el nombre del producto
+                return FutureBuilder<String?>(
+                  future: _getProductName(data['product_id'] ?? ''),
+                  builder: (context, productSnapshot) {
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      color: statusColor, // Aplicar color de fondo según el estado
+                      child: ListTile(
+                        title: Text('Producto: ${productSnapshot.data ?? "Desconocido"}'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Cantidad: ${data['amout'] ?? 0}'),
+                            Text('Estado: $status'),
+                            Text('Fecha: $formattedDate'),
+                          ],
+                        ),
+                        trailing: Text('\$${data['subtotal'] ?? 0}'),
+                      ),
+                    );
+                  },
                 );
               }).toList(),
             );

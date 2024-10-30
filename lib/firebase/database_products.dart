@@ -38,5 +38,27 @@ class DatabaseProducts {
     return null; 
   }
 
-  
+    // Método para obtener todas las categorías
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    try {
+      QuerySnapshot snapshot = await firebaseFirestore.collection('categories').get();
+      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('Error al obtener categorías: $e');
+      return []; // Retorna una lista vacía en caso de error
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getProductsByCategory(String categoryId) async {
+    try {
+      QuerySnapshot snapshot = await firebaseFirestore
+          .collection('Products') // Cambia a la colección correcta si es necesario
+          .where('category_id', isEqualTo: categoryId) // Asegúrate de que este campo exista
+          .get();
+      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('Error al obtener productos por categoría: $e');
+      return []; // Retorna una lista vacía en caso de error
+    }
+  }
 }
