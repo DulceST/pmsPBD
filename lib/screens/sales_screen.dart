@@ -104,7 +104,7 @@ class SalesScreen extends StatelessWidget {
                       items: products.entries.map((entry) {
                         return DropdownMenuItem(
                           value: entry.key, // Use the product ID as value
-                          child: Text(entry.value['product']), // Show the product name
+                          child: Text(entry.value['name']), // Show the product name
                         );
                       }).toList(),
                       onChanged: (value) {
