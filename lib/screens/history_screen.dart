@@ -66,18 +66,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 String status = data['status'] ?? 'Desconocido';
                 Color statusColor = _getStatusColor(status);
 
-                // Obtener el nombre del producto
+                // Obtener el nombre del producto y cliente
                 return FutureBuilder<String?>(
                   future: _getProductName(data['product_id'] ?? ''),
                   builder: (context, productSnapshot) {
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      color: statusColor, // Aplicar color de fondo según el estado
+                      color: statusColor,
                       child: ListTile(
                         title: Text('Producto: ${productSnapshot.data ?? "Desconocido"}'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text('Cliente: ${data['client'] ?? "Desconocido"}'), // Nombre del cliente
                             Text('Cantidad: ${data['amout'] ?? 0}'),
                             Text('Estado: $status'),
                             Text('Fecha: $formattedDate'),

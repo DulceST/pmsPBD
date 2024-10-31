@@ -41,6 +41,7 @@ class SalesScreen extends StatelessWidget {
                   return ListTile(
                     title: Text('Producto: ${productSnapshot.data ?? "Desconocido"}'),
                     subtitle: Text('Cliente: ${sale['client'] ?? "Desconocido"}'),
+                    onTap: () => _showSaleDetails(context, sale),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -67,6 +68,41 @@ class SalesScreen extends StatelessWidget {
     } catch (e) {
       print('Error al cancelar la venta: $e');
     }
+  }
+
+  Future<void> _showSaleDetails(BuildContext context, Map<String, dynamic> sale) async {
+    String? productName = await _getProductName(sale['product_id'] ?? '');
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Detalles de la Venta'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Producto: $productName'),
+              Text('Cliente: ${sale['client'] ?? "Desconocido"}'),
+              Text('Cantidad: ${sale['amout'] ?? 0}'),
+              Text('Subtotal: \$${sale['subtotal'] ?? 0}'),
+              Text('Estado: ${sale['status']}'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cerrar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await databaseSales.updateSaleStatus(sale['id'], 'completado');
+                Navigator.pop(context);
+              },
+              child: const Text('Marcar como Completada'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _registerSale(BuildContext context) async {
