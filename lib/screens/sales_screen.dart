@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:pmspbd/firebase/database_products.dart';
 import 'package:pmspbd/firebase/database_sales.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -108,13 +109,14 @@ class SalesScreen extends StatelessWidget {
   Future<void> _registerSale(BuildContext context) async {
     final TextEditingController clientController = TextEditingController();
     String? selectedCategoryId;
-    String? selectedProductId; // This will store the product ID
+    String? selectedProductId;
     int quantity = 1;
     double price = 0;
     double subtotal = 0;
+    DateTime selectedDate = DateTime.now(); // Inicializa con la fecha actual
 
     List<Map<String, String>> categories = await _getCategories();
-    Map<String, Map<String, dynamic>> products = {}; // Changed to hold product ID, name, and price
+    Map<String, Map<String, dynamic>> products = {};
 
     showDialog(
       context: context,
@@ -146,7 +148,7 @@ class SalesScreen extends StatelessWidget {
                     onChanged: (value) async {
                       selectedCategoryId = value;
                       products = await _getProductsByCategoryId(selectedCategoryId!);
-                      setState(() {}); // Refresh dialog with loaded products
+                      setState(() {}); // Refresca el diálogo con los productos cargados
                     },
                   ),
                   const SizedBox(height: 10),
@@ -156,18 +158,15 @@ class SalesScreen extends StatelessWidget {
                       value: selectedProductId,
                       items: products.entries.map((entry) {
                         return DropdownMenuItem(
-                          value: entry.key, // Use the product ID as value
-                          child: Text(entry.value['name']), // Show the product name
+                          value: entry.key, // Usa el ID del producto como valor
+                          child: Text(entry.value['name']), // Muestra el nombre del producto
                         );
                       }).toList(),
                       onChanged: (value) {
                         setState(() {
-                          selectedProductId = value; // Set the product ID
-                          price = products[value]!['price']; // Get the price
+                          selectedProductId = value; // Asigna el ID del producto
+                          price = products[value]!['price']; // Obtén el precio
                           subtotal = price * quantity;
-
-                          // Debugging: Print the selected product ID
-                          print('Selected Product ID: $selectedProductId');
                         });
                       },
                     ),
@@ -203,6 +202,29 @@ class SalesScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   if (selectedProductId != null)
                     Text('Subtotal: \$${subtotal.toStringAsFixed(2)}'),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Fecha de Venta:'),
+                      TextButton(
+                        onPressed: () async {
+                          final pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (pickedDate != null && pickedDate != selectedDate) {
+                            setState(() {
+                              selectedDate = pickedDate;
+                            });
+                          }
+                        },
+                        child: Text(DateFormat('yyyy-MM-dd').format(selectedDate)),
+                      ),
+                    ],
+                  ),
                 ],
               ),
               actions: [
@@ -213,7 +235,6 @@ class SalesScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () {
                     if (clientController.text.isNotEmpty && selectedProductId != null) {
-                      // Debugging: Print the selected product before inserting
                       print('Inserting Sale with Product ID: $selectedProductId');
 
                       databaseSales.insertsale({
@@ -222,7 +243,7 @@ class SalesScreen extends StatelessWidget {
                         'amout': quantity,
                         'subtotal': subtotal,
                         'status': 'por cumplir',
-                        'date': DateTime.now()
+                        'date': selectedDate, // Usa la fecha seleccionada
                       });
                       Navigator.pop(context);
                     }
@@ -236,7 +257,6 @@ class SalesScreen extends StatelessWidget {
       },
     );
   }
-
   Future<List<Map<String, String>>> _getCategories() async {
     QuerySnapshot snapshot =
         await FirebaseFirestore.instance.collection('categories').get();
